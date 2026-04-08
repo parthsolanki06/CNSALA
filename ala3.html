@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ALA-3: MAC-Based Authentication</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap"
+        rel="stylesheet">
+
+    <!-- Prism.js CSS (Tomorrow Night Theme) for Python script Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <!-- html2canvas for saving output image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #ec4899;
+            --bg: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.95);
+            --border: rgba(226, 232, 240, 0.8);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --success-hover: #059669;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+            /* Prevent horizontal scrolling */
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            background-image: linear-gradient(135deg, #e6e9f0 0%, #eef1f5 100%);
+            color: var(--text-main);
+            padding: 3rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .home-link {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+            width: fit-content;
+        }
+
+        .home-link:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+        }
+
+        .wrapper {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            /* Force equal width and prevent overflow */
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .panel {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 2.25rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-width: 0;
+            /* Prevents flex/grid elements from forcing intrinsic width */
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            margin: 1.75rem 0 0.75rem 0;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* Code block */
+        pre[class*="language-"] {
+            border-radius: 12px;
+            margin: 0;
+            height: 540px;
+            /* Fixed height for code block */
+            max-height: 100%;
+            overflow: auto;
+            /* Internal scroll */
+            background: #1e1e1e !important;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        code[class*="language-"] {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Execution Environment Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        input[type="text"] {
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+            transition: all 0.3s ease;
+            min-height: 48px;
+            /* Touch-friendly height */
+            background: #ffffff;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-height: 48px;
+            /* Touch-friendly */
+        }
+
+        .btn-run {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-run:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-run:active {
+            transform: translateY(0);
+        }
+
+        .btn-save {
+            background: var(--success);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-save:hover {
+            background: var(--success-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-save:active {
+            transform: translateY(0);
+        }
+
+        /* Terminal Window */
+        .terminal-container {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            color: #00ff00;
+            font-family: 'Fira Code', monospace;
+            height: 300px;
+            /* Fixed height */
+            overflow-y: auto;
+            /* Internal vertical scroll */
+            overflow-x: hidden;
+            position: relative;
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            /* Allow it to fill remaining space */
+        }
+
+        .mac-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1rem;
+            flex-shrink: 0;
+        }
+
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .mac-btn.red {
+            background: #ff5f56;
+        }
+
+        .mac-btn.yellow {
+            background: #ffbd2e;
+        }
+
+        .mac-btn.green {
+            background: #27c93f;
+        }
+
+        .terminal-output {
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            word-break: break-word;
+            /* Prevent content from breaking container layout */
+            flex-grow: 1;
+        }
+
+        /* Bottom Nav Execution */
+        .bottom-nav-execution {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            gap: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            background: white;
+            border: 1px solid #cbd5e1;
+            color: var(--text-main);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            min-height: 48px;
+            flex: 1;
+            /* Equal width distribution */
+        }
+
+        .nav-btn:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+            background: #f8fafc;
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .next-btn {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+
+        .next-btn:hover {
+            background: var(--primary-hover);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        /* ----- Responsive Design Media Queries ----- */
+
+        /* Tablet Layout */
+        @media (max-width: 1000px) {
+            .wrapper {
+                grid-template-columns: 1fr;
+                /* Switch to single column */
+            }
+
+            pre[class*="language-"] {
+                height: 450px;
+            }
+
+            .terminal-container {
+                height: 350px;
+            }
+        }
+
+        /* Mobile Layout */
+        @media (max-width: 768px) {
+            body {
+                padding: 1.5rem 1rem;
+                font-size: 15px;
+                /* Base font scaling */
+            }
+
+            .panel {
+                padding: 1.75rem;
+                border-radius: 20px;
+            }
+
+            h2 {
+                font-size: 1.35rem;
+            }
+
+            h3 {
+                font-size: 1.1rem;
+            }
+
+            pre[class*="language-"] {
+                height: 380px;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                /* Stack buttons vertically */
+                gap: 0.85rem;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 1rem;
+            }
+
+            .bottom-nav-execution {
+                flex-direction: column;
+                /* Stack navigation vertically */
+                gap: 0.85rem;
+            }
+
+            .nav-btn {
+                width: 100%;
+            }
+        }
+
+        /* Small Mobile / iPhone Layout */
+        @media (max-width: 500px) {
+            body {
+                padding: 1.25rem 0.75rem;
+            }
+
+            .panel {
+                padding: 1.25rem;
+                border-radius: 16px;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+                margin-bottom: 1.25rem;
+            }
+
+            pre[class*="language-"] {
+                height: 320px;
+            }
+
+            .terminal-container {
+                height: 300px;
+                padding: 1.25rem;
+            }
+
+            input[type="text"] {
+                padding: 0.85rem 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div style="width: 100%; max-width: 1300px; margin: 0 auto;">
+        <a href="home.html" class="home-link">← Back to Home</a>
+
+        <div class="wrapper">
+
+            <!-- Python Source Code -->
+            <div class="panel">
+                <h2>📜 Python Source Code</h2>
+                <pre><code class="language-python">"""
+MAC-Based Message Authentication using HMAC
+Author: Parth Solanki
+Description:
+Demonstrates how a sender generates a MAC using a shared secret key,
+and how a receiver verifies it to ensure data integrity and authentication.
+"""
+
+import hmac
+import hashlib
+
+# ==============================
+# Sender: Generate MAC
+# ==============================
+def create_mac(message, key):
+    # Use HMAC with SHA-256
+    mac = hmac.new(key.encode(), message.encode(), hashlib.sha256)
+    return mac.hexdigest()
+
+# ==============================
+# Receiver: Verify MAC
+# ==============================
+def verify_mac(message, received_mac, key):
+    # Receiver calculates MAC independently
+    expected_mac = create_mac(message, key)
+    
+    # Securely compare MACs
+    return hmac.compare_digest(expected_mac, received_mac)
+
+# ==============================
+# Main Simulation
+# ==============================
+def main():
+    print("===== HMAC Authentication Simulator =====\n")
+    
+    secret_key = input("Enter Shared Secret Key: ")
+    
+    # 1. Sender Side
+    sent_msg = input("\nEnter message to send: ")
+    print("\n[Sender] Calculating MAC with secret key...")
+    mac = create_mac(sent_msg, secret_key)
+    print(f"[Sender] Generated MAC: {mac}")
+    
+    print("\n-------------------------------------------")
+    print(" 📡 Transmitting Message & MAC to Receiver... ")
+    print("-------------------------------------------\n")
+    
+    # 2. Receiver Side
+    # Simulate an attacker tampering with the transmission
+    recv_msg = input("Enter received message (alter it to simulate tampering): ")
+    
+    print("\n[Receiver] Verifying integrated data...")
+    is_valid = verify_mac(recv_msg, mac, secret_key)
+    
+    if is_valid:
+        print("\n✅ Success: MAC verified!")
+        print("The message is authentic and has not been altered.")
+    else:
+        print("\n❌ Warning: MAC verification failed!")
+        print("The message might have been tampered with or the key is wrong.")
+
+
+if __name__ == "__main__":
+    main()
+</code></pre>
+            </div>
+
+            <!-- Execution Panel -->
+            <div class="panel">
+                <h2>▶ Execution Environment</h2>
+
+                <div class="controls">
+                    <input type="text" id="shared-key" placeholder="Enter shared secret key..." value="parth_secret_123">
+                    <input type="text" id="msg-send" placeholder="Enter message to send..." value="Transfer $1000 to Bob">
+                    <input type="text" id="msg-recv" placeholder="Simulate received message..." value="Transfer $1000 to Bob">
+
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 0.25rem;">
+                        <i>Tip: Run once without changing the received message, then try altering the received message to simulate an attack!</i>
+                    </p>
+
+                    <div class="btn-group">
+                        <button class="btn btn-run" onclick="runPythonCode()">▶ Simulate HMAC Auth</button>
+                        <button class="btn btn-save" onclick="downloadOutput()">📸 Download Output Image</button>
+                    </div>
+                </div>
+
+                <h3 style="margin: 0.8rem 0 0.4rem 0; color: var(--text-main); font-size: 1.1rem;">Terminal Output Window</h3>
+
+                <div class="terminal-container" id="terminal-wrapper">
+                    <div class="mac-buttons">
+                        <div class="mac-btn red"></div>
+                        <div class="mac-btn yellow"></div>
+                        <div class="mac-btn green"></div>
+                    </div>
+                    <div class="terminal-output" id="output">Press 'Simulate HMAC Auth' to start the demonstration...</div>
+                </div>
+
+                <!-- Navigation Buttons inside the Execution Panel -->
+                <div class="bottom-nav-execution">
+                    <a href="ala2.html" class="nav-btn">← Back to ALA-2</a>
+                    <a href="home.html" class="nav-btn next-btn">Go to Home 🏠</a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PrismJS for highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+    <!-- Execution Logic Simulator -->
+    <script src="ala3.js"></script>
+</body>
+
+</html>
