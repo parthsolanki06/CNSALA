@@ -3,517 +3,175 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ALA-2: Hash Functions & Avalanche Effect</title>
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Fira+Code&display=swap"
-        rel="stylesheet">
-
-    <!-- Prism.js CSS (Tomorrow Night Theme) for Python script Highlighting -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHA Dual Integrity Analyzer | Cyber Demo</title>
+    <link rel="stylesheet" href="ala2.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Prism Syntax Highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-
-    <!-- html2canvas for saving output image -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --secondary: #ec4899;
-            --bg: #f8fafc;
-            --surface: rgba(255, 255, 255, 0.95);
-            --border: rgba(226, 232, 240, 0.8);
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --success: #10b981;
-            --success-hover: #059669;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html,
-        body {
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden;
-            /* Prevent horizontal scrolling */
-            -webkit-font-smoothing: antialiased;
-        }
-
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg);
-            background-image: linear-gradient(135deg, #e6e9f0 0%, #eef1f5 100%);
-            color: var(--text-main);
-            padding: 3rem 1.5rem;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            font-size: 16px;
-        }
-
-        .home-link {
-            display: inline-flex;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: color 0.3s ease;
-            width: fit-content;
-        }
-
-        .home-link:hover {
-            color: var(--primary-hover);
-            text-decoration: underline;
-        }
-
-        .wrapper {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            /* Force equal width and prevent overflow */
-            gap: 2rem;
-            width: 100%;
-        }
-
-        .panel {
-            background: var(--surface);
-            border-radius: 24px;
-            padding: 2.25rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-width: 0;
-            /* Prevents flex/grid elements from forcing intrinsic width */
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--text-main);
-            font-weight: 700;
-        }
-
-        h3 {
-            font-size: 1.15rem;
-            margin: 1.75rem 0 0.75rem 0;
-            color: var(--text-main);
-            font-weight: 600;
-        }
-
-        /* Code block */
-        pre[class*="language-"] {
-            border-radius: 12px;
-            margin: 0;
-            height: 540px;
-            /* Fixed height for code block */
-            max-height: 100%;
-            overflow: auto;
-            /* Internal scroll */
-            background: #1e1e1e !important;
-            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        code[class*="language-"] {
-            font-family: 'Fira Code', monospace;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        /* Execution Environment Controls */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        input[type="text"] {
-            padding: 1rem 1.25rem;
-            border-radius: 12px;
-            border: 1px solid #cbd5e1;
-            font-family: 'Outfit', sans-serif;
-            font-size: 1rem;
-            width: 100%;
-            outline: none;
-            transition: all 0.3s ease;
-            min-height: 48px;
-            /* Touch-friendly height */
-            background: #ffffff;
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-            flex: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            min-height: 48px;
-            /* Touch-friendly */
-        }
-
-        .btn-run {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
-        }
-
-        .btn-run:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
-        }
-
-        .btn-run:active {
-            transform: translateY(0);
-        }
-
-        .btn-save {
-            background: var(--success);
-            color: white;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
-        }
-
-        .btn-save:hover {
-            background: var(--success-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
-        }
-
-        .btn-save:active {
-            transform: translateY(0);
-        }
-
-        /* Terminal Window */
-        .terminal-container {
-            background: #1e1e1e;
-            border-radius: 12px;
-            padding: 1.5rem;
-            color: #00ff00;
-            font-family: 'Fira Code', monospace;
-            height: 300px;
-            /* Fixed height */
-            overflow-y: auto;
-            /* Internal vertical scroll */
-            overflow-x: hidden;
-            position: relative;
-            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            /* Allow it to fill remaining space */
-        }
-
-        .mac-buttons {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 1rem;
-            flex-shrink: 0;
-        }
-
-        .mac-btn {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .mac-btn.red {
-            background: #ff5f56;
-        }
-
-        .mac-btn.yellow {
-            background: #ffbd2e;
-        }
-
-        .mac-btn.green {
-            background: #27c93f;
-        }
-
-        .terminal-output {
-            white-space: pre-wrap;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            word-break: break-word;
-            /* Prevent content from breaking container layout */
-            flex-grow: 1;
-        }
-
-        /* Bottom Nav Execution */
-        .bottom-nav-execution {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2rem;
-            gap: 1rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .nav-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1rem;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            background: white;
-            border: 1px solid #cbd5e1;
-            color: var(--text-main);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            min-height: 48px;
-            flex: 1;
-            /* Equal width distribution */
-        }
-
-        .nav-btn:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-            transform: translateY(-2px);
-            background: #f8fafc;
-        }
-
-        .nav-btn:active {
-            transform: translateY(0);
-        }
-
-        .next-btn {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-        }
-
-        .next-btn:hover {
-            background: var(--primary-hover);
-            color: white;
-            border-color: var(--primary-hover);
-        }
-
-        /* ----- Responsive Design Media Queries ----- */
-
-        /* Tablet Layout */
-        @media (max-width: 1000px) {
-            .wrapper {
-                grid-template-columns: 1fr;
-                /* Switch to single column */
-            }
-
-            pre[class*="language-"] {
-                height: 450px;
-            }
-
-            .terminal-container {
-                height: 350px;
-            }
-        }
-
-        /* Mobile Layout */
-        @media (max-width: 768px) {
-            body {
-                padding: 1.5rem 1rem;
-                font-size: 15px;
-                /* Base font scaling */
-            }
-
-            .panel {
-                padding: 1.75rem;
-                border-radius: 20px;
-            }
-
-            h2 {
-                font-size: 1.35rem;
-            }
-
-            h3 {
-                font-size: 1.1rem;
-            }
-
-            pre[class*="language-"] {
-                height: 380px;
-            }
-
-            .btn-group {
-                flex-direction: column;
-                /* Stack buttons vertically */
-                gap: 0.85rem;
-            }
-
-            .btn {
-                width: 100%;
-                padding: 1rem;
-            }
-
-            .bottom-nav-execution {
-                flex-direction: column;
-                /* Stack navigation vertically */
-                gap: 0.85rem;
-            }
-
-            .nav-btn {
-                width: 100%;
-            }
-        }
-
-        /* Small Mobile / iPhone Layout */
-        @media (max-width: 500px) {
-            body {
-                padding: 1.25rem 0.75rem;
-            }
-
-            .panel {
-                padding: 1.25rem;
-                border-radius: 16px;
-            }
-
-            h2 {
-                font-size: 1.25rem;
-                margin-bottom: 1.25rem;
-            }
-
-            pre[class*="language-"] {
-                height: 320px;
-            }
-
-            .terminal-container {
-                height: 300px;
-                padding: 1.25rem;
-            }
-
-            input[type="text"] {
-                padding: 0.85rem 1rem;
-            }
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
 </head>
 
 <body>
+    <nav class="top-nav">
+        <a href="home.html" class="nav-link"><i class="fas fa-home"></i> Back to Home</a>
+        <button class="nav-link code-btn" onclick="openCodeModal()"><i class="fas fa-code"></i> View Python Code</button>
+        <div style="margin-left: auto; display: flex;">
+            <a href="ala1.html" class="nav-link"><i class="fas fa-chevron-left"></i> Back to ALA 1</a>
+            <a href="ala3.html" class="nav-link" style="margin-right: 0;">Go to ALA 3 <i
+                    class="fas fa-chevron-right"></i></a>
+        </div>
+    </nav>
 
-    <div style="width: 100%; max-width: 1300px; margin: 0 auto;">
-        <a href="home.html" class="home-link">← Back to Home</a>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shield-virus"></i> Dual Integrity Analyzer</h1>
+            <p class="subtitle">Comparing Hashes to Demonstrate the Avalanche Effect</p>
+        </header>
 
-        <div class="wrapper">
-
-            <!-- Python Source Code -->
-            <div class="panel">
-                <h2>📜 Python Source Code</h2>
-                <pre><code class="language-python">import hashlib
-
-# Function to generate hashes
-def generate_hashes(text):
-    print("\nInput Text:", text)
-
-    # SHA-1
-    sha1 = hashlib.sha1(text.encode()).hexdigest()
-    print("SHA-1   :", sha1)
-
-    # SHA-256
-    sha256 = hashlib.sha256(text.encode()).hexdigest()
-    print("SHA-256 :", sha256)
-
-    # SHA-512
-    sha512 = hashlib.sha512(text.encode()).hexdigest()
-    print("SHA-512 :", sha512)
-
-    return sha1, sha256, sha512
-
-
-# Function to demonstrate avalanche effect
-def avalanche_effect(text1, text2):
-    print("\n--- Avalanche Effect Demonstration ---")
-
-    print("\nOriginal Input:")
-    h1 = generate_hashes(text1)
-
-    print("\nModified Input (small change):")
-    h2 = generate_hashes(text2)
-
-    print("\nObservation:")
-    print("Even a small change in input produces completely different hash outputs.")
-
-
-# Main Program
-if __name__ == "__main__":
-    print("===== SHA Integrity Analyzer =====")
-
-    # Take user input
-    text1 = input("Enter original text: ")
-    text2 = input("Enter modified text (slight change): ")
-
-    avalanche_effect(text1, text2)
-</code></pre>
-            </div>
-
-            <!-- Execution Panel -->
-            <div class="panel">
-                <h2>▶ Execution Environment</h2>
-
-                <div class="controls">
-                    <input type="text" id="msg-input1" placeholder="Enter original message..." value="Hello">
-                    <input type="text" id="msg-input2" placeholder="Enter slightly modified message..." value="Hello!">
-
-                    <div class="btn-group">
-                        <button class="btn btn-run" onclick="runPythonCode()">▶ Run Program</button>
-                        <button class="btn btn-save" onclick="downloadOutput()">📸 Download Output Image</button>
+        <div class="comparison-grid">
+            <!-- ORIGINAL INPUT PANEL -->
+            <section class="panel">
+                <div class="column-header">
+                    <i class="fas fa-file-alt"></i> Original Message
+                </div>
+                <div class="input-group">
+                    <textarea id="msg-orig" rows="4" placeholder="Enter original secret message..."></textarea>
+                </div>
+                <div class="hash-results">
+                    <div class="algorithm-box">
+                        <div class="algo-header">
+                            <span class="algo-name">SHA-1 <span class="warning-badge">INSECURE</span></span>
+                            <button class="copy-btn" onclick="copyText('orig-sha1')"><i
+                                    class="far fa-copy"></i></button>
+                        </div>
+                        <div id="orig-sha1" class="hash-string">...</div>
+                    </div>
+                    <div class="algorithm-box">
+                        <div class="algo-header">
+                            <span class="algo-name">SHA-256</span>
+                            <button class="copy-btn" onclick="copyText('orig-sha256')"><i
+                                    class="far fa-copy"></i></button>
+                        </div>
+                        <div id="orig-sha256" class="hash-string">...</div>
+                    </div>
+                    <div class="algorithm-box">
+                        <div class="algo-header">
+                            <span class="algo-name">SHA-512</span>
+                            <button class="copy-btn" onclick="copyText('orig-sha512')"><i
+                                    class="far fa-copy"></i></button>
+                        </div>
+                        <div id="orig-sha512" class="hash-string">...</div>
                     </div>
                 </div>
+            </section>
 
-                <h3 style="margin: 0.8rem 0 0.4rem 0; color: var(--text-main); font-size: 1.1rem;">Terminal Output
-                    Window</h3>
-
-                <div class="terminal-container" id="terminal-wrapper">
-                    <div class="mac-buttons">
-                        <div class="mac-btn red"></div>
-                        <div class="mac-btn yellow"></div>
-                        <div class="mac-btn green"></div>
+            <!-- MODIFIED INPUT PANEL -->
+            <section class="panel">
+                <div class="column-header modified">
+                    <i class="fas fa-file-signature"></i> Modified Message
+                </div>
+                <div class="input-group">
+                    <textarea id="msg-mod" rows="4" placeholder="Enter slightly different message..."></textarea>
+                </div>
+                <div class="hash-results">
+                    <div class="algorithm-box">
+                        <div class="algo-header">
+                            <span class="algo-name">SHA-1 <span class="warning-badge">INSECURE</span></span>
+                            <button class="copy-btn" onclick="copyText('mod-sha1')"><i class="far fa-copy"></i></button>
+                        </div>
+                        <div id="mod-sha1" class="hash-string highlight">...</div>
                     </div>
-                    <div class="terminal-output" id="output">Press 'Run Program' to start...</div>
+                    <div class="algorithm-box">
+                        <div class="algo-header">
+                            <span class="algo-name">SHA-256</span>
+                            <button class="copy-btn" onclick="copyText('mod-sha256')"><i
+                                    class="far fa-copy"></i></button>
+                        </div>
+                        <div id="mod-sha256" class="hash-string highlight">...</div>
+                    </div>
+                    <div class="algorithm-box">
+                        <div class="algo-header">
+                            <span class="algo-name">SHA-512</span>
+                            <button class="copy-btn" onclick="copyText('mod-sha512')"><i
+                                    class="far fa-copy"></i></button>
+                        </div>
+                        <div id="mod-sha512" class="hash-string highlight">...</div>
+                    </div>
                 </div>
-
-                <!-- Navigation Buttons inside the Execution Panel -->
-                <div class="bottom-nav-execution">
-                    <a href="ala1.html" class="nav-btn">← Back to ALA-1</a>
-                    <a href="ala3.html" class="nav-btn next-btn">Go to ALA-3 →</a>
-                </div>
-            </div>
-
+            </section>
         </div>
 
+        <div class="action-center">
+            <button id="compare-btn" class="main-btn">
+                <i class="fas fa-search-plus"></i> Generate & Compare
+            </button>
+        </div>
+
+        <!-- STATS BANNER -->
+        <div id="stats-section" class="stats-banner" style="display: none;">
+            <div class="stat-label">Avalanche Effect Difference</div>
+            <div id="avalanche-percent" class="stat-value">0%</div>
+            <div id="stat-msg" class="stat-msg">Detecting changes...</div>
+            <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">
+                Percentage of bits changed in the resulting hash string.
+            </div>
+        </div>
+
+        <section class="info-section">
+            <div class="info-grid">
+                <div>
+                    <h2>Understanding the Avalanche Effect</h2>
+                    <p>In cryptography, the <strong>Avalanche Effect</strong> refers to a property of block ciphers and
+                        cryptographic hash functions. It occurs when a small change in the input (such as flipping a
+                        single bit) results in a drastic and unpredictable change in the output.</p>
+                    <p>This demo highlights that change by comparing two inputs character-by-character. Even if you
+                        change just one lowercase 'a' to a capital 'A', the resulting hexadecimal string will look
+                        completely different to any observer.</p>
+                    <p><strong>Integrity Verification:</strong> This is why SHA-256 and SHA-512 are used to verify that
+                        files haven't been tampered with. If even one byte of a file changes, the hash will fail to
+                        match.</p>
+                </div>
+                <div class="avalanche-diagram">
+                    <i class="fas fa-project-diagram fa-3x" style="margin-bottom: 1rem;"></i>
+                    <p style="text-align: center; font-size: 0.8rem;">One Bit Flip<br>⟱<br>Entire Hash Changes</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; CRYPTOGRAPHY AND NETWORK SECURITY | Advanced Integrity Analysis Demo</p>
+        </footer>
     </div>
 
-    <!-- PrismJS for highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <!-- Notification -->
+    <div id="toast"
+        style="position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: var(--text-main); color: white; padding: 0.8rem 2rem; border-radius: 50px; font-weight: 700; display: none; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);">
+        COPIED TO CLIPBOARD!</div>
 
-    <!-- Execution Logic Simulator -->
+    <!-- Code View Modal -->
+    <div id="code-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fab fa-python"></i> ALA-2 Python Implementation</h3>
+                <div class="modal-actions">
+                    <button onclick="copyCode()" class="action-btn"><i class="far fa-copy"></i> Copy</button>
+                    <button onclick="downloadCode()" class="action-btn"><i class="fas fa-download"></i> Download</button>
+                    <button onclick="closeCodeModal()" class="close-btn">&times;</button>
+                </div>
+            </div>
+            <div class="code-container">
+                <pre class="line-numbers"><code class="language-python" id="python-code"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prism JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+
+    <!-- Script -->
     <script src="ala2.js"></script>
 </body>
 
