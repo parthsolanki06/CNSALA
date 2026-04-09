@@ -1,96 +1,228 @@
-async function runPythonCode() {
-    const keyStr = document.getElementById("shared-key").value || "default_key";
-    const msgSend = document.getElementById("msg-send").value || "";
-    const msgRecv = document.getElementById("msg-recv").value || "";
-    const output = document.getElementById("output");
+document.addEventListener('DOMContentLoaded', () => {
+    // Elements - Sender
+    const messageInput = document.getElementById('message-input');
+    const keyInput = document.getElementById('key-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const senderResult = document.getElementById('sender-result');
+    const generatedMacDisplay = document.getElementById('generated-mac');
+    const senderLoading = document.getElementById('sender-loading');
     
-    output.style.color = "#00ff00"; // Reset terminal color
+    // Elements - Receiver
+    const receivedMessage = document.getElementById('received-message');
+    const verifyKey = document.getElementById('verify-key');
+    const verifyBtn = document.getElementById('verify-btn');
+    const receiverResult = document.getElementById('receiver-result');
+    const verificationStatus = document.getElementById('verification-status');
+    const verificationMac = document.getElementById('verification-mac');
+    const receiverLoading = document.getElementById('receiver-loading');
 
-    try {
-        let text = `===== HMAC Authentication Simulator =====\n\n`;
-        text += `[Network] Using Shared Secret Key: "${keyStr}"\n\n`;
-        
-        text += `[Sender] Original Message: "${msgSend}"\n`;
-        text += `[Sender] Calculating MAC (HMAC-SHA256)...\n`;
+    // State
+    let originalMac = '';
 
-        // Convert key and message to array buffers
-        const enc = new TextEncoder();
-        
-        // Import the key
-        const cryptoKey = await crypto.subtle.importKey(
-            "raw", enc.encode(keyStr),
-            { name: "HMAC", hash: "SHA-256" },
-            false, ["sign", "verify"]
-        );
+    // Error elements
+    const msgError = document.getElementById('msg-error');
+    const keyError = document.getElementById('key-error');
 
-        // Generate MAC
-        const signatureBuffer = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(msgSend));
-        const hashArray = Array.from(new Uint8Array(signatureBuffer));
-        const macHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        text += `[Sender] Generated MAC: ${macHex}\n`;
-        
-        text += `\n------------------------------------------------\n`;
-        text += ` 📡 Transmitting Message & MAC over network... \n`;
-        text += `------------------------------------------------\n\n`;
-        
-        text += `[Receiver] Incoming Message: "${msgRecv}"\n`;
-        text += `[Receiver] Incoming MAC: ${macHex.substring(0,16)}...${macHex.substring(macHex.length-8)}\n\n`;
-        
-        text += `[Receiver] Independently calculating MAC from received message...\n`;
-        
-        // Receiver generates their own MAC using the received message and shared key
-        const receiverSignature = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(msgRecv));
-        const receiverHashArray = Array.from(new Uint8Array(receiverSignature));
-        const receiverMacHex = receiverHashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        text += `[Receiver] Expected MAC:  ${macHex.substring(0,16)}...\n`;
-        text += `[Receiver] Calculated MAC: ${receiverMacHex.substring(0,16)}...\n`;
-        
-        // In SubtleCrypto, we'd use verify, but to show the string match visually:
-        const isValid = await crypto.subtle.verify("HMAC", cryptoKey, signatureBuffer, enc.encode(msgRecv));
+    /**
+     * Generate HMAC
+     */
+    generateBtn.addEventListener('click', () => {
+        const message = messageInput.value.trim();
+        const key = keyInput.value.trim();
 
-        if (isValid) {
-            text += `\n✅ Success: MACs Match!\n`;
-            text += `Authentication & Integrity Verified. The message is completely authentic.`;
-            output.style.color = "#00ff00";
+        // Validation
+        let hasError = false;
+        if (!message) {
+            msgError.style.display = 'block';
+            hasError = true;
         } else {
-            text += `\n❌ Warning: MACs Do NOT Match!\n`;
-            text += `Verification Failed! The message was likely tampered with or forged.`;
-            output.style.color = "#ff5f56"; // Red warning color
+            msgError.style.display = 'none';
         }
 
-        output.innerText = text;
-    } catch (err) {
-        output.innerText = "Error encountered:\n" + err;
-        output.style.color = "#ff5f56";
+        if (!key) {
+            keyError.style.display = 'block';
+            hasError = true;
+        } else {
+            keyError.style.display = 'none';
+        }
+
+        if (hasError) return;
+
+        // Visual feedback
+        generateBtn.querySelector('span').textContent = 'Computing...';
+        senderLoading.style.display = 'inline-block';
+        senderResult.style.display = 'none';
+
+        // Simulate computation time
+        setTimeout(() => {
+            try {
+                // HMAC SHA-256 calculation
+                const hmac = CryptoJS.HmacSHA256(message, key);
+                originalMac = hmac.toString(CryptoJS.enc.Hex);
+
+                // Update UI
+                generatedMacDisplay.textContent = originalMac;
+                senderResult.style.display = 'block';
+                
+                // Auto-fill receiver side to simulate "sending"
+                receivedMessage.value = message;
+                verifyKey.value = key;
+
+                // Reset button
+                generateBtn.querySelector('span').textContent = 'Generate MAC';
+                senderLoading.style.display = 'none';
+
+                // Flash animation
+                senderResult.style.animation = 'none';
+                senderResult.offsetHeight; // trigger reflow
+                senderResult.style.animation = 'fadeInUp 0.5s ease';
+            } catch (error) {
+                console.error("Encryption Error:", error);
+                alert("An error occurred during MAC generation.");
+                senderLoading.style.display = 'none';
+                generateBtn.querySelector('span').textContent = 'Generate MAC';
+            }
+        }, 800);
+    });
+
+    /**
+     * Verify HMAC
+     */
+    verifyBtn.addEventListener('click', () => {
+        if (!originalMac) {
+            alert("Please generate a MAC from the sender side first!");
+            return;
+        }
+
+        const msg = receivedMessage.value.trim();
+        const key = verifyKey.value.trim();
+
+        // Visual feedback
+        verifyBtn.querySelector('span').textContent = 'Verifying...';
+        receiverLoading.style.display = 'inline-block';
+        receiverResult.style.display = 'none';
+
+        setTimeout(() => {
+            // Recompute HMAC on receiver side
+            const currentHmac = CryptoJS.HmacSHA256(msg, key).toString(CryptoJS.enc.Hex);
+            
+            verificationMac.textContent = `Current Hash: ${currentHmac.substring(0, 32)}...`;
+            receiverResult.style.display = 'block';
+
+            if (currentHmac === originalMac) {
+                verificationStatus.innerHTML = '<i class="fas fa-check-circle"></i> Authentic';
+                verificationStatus.className = 'verification-status status-authentic';
+                receiverResult.style.borderLeftColor = 'var(--neon-green)';
+            } else {
+                verificationStatus.innerHTML = '<i class="fas fa-times-circle"></i> Tampered / Invalid Key';
+                verificationStatus.className = 'verification-status status-tampered';
+                receiverResult.style.borderLeftColor = 'var(--neon-red)';
+            }
+
+            // Reset button
+            verifyBtn.querySelector('span').textContent = 'Verify MAC';
+            receiverLoading.style.display = 'none';
+            
+            // Flash animation
+            receiverResult.style.animation = 'none';
+            receiverResult.offsetHeight; // trigger reflow
+            receiverResult.style.animation = 'fadeInUp 0.5s ease';
+        }, 800);
+    });
+});
+
+// --- CODE VIEW MODAL LOGIC ---
+const pythonCodeALA3 = `import hmac
+import hashlib
+
+def generate_hmac(key, message):
+    """
+    Generates an HMAC-SHA256 signature for a message using a secret key.
+    """
+    return hmac.new(key.encode(), message.encode(), hashlib.sha256).hexdigest()
+
+def verify_hmac(key, message, received_mac):
+    """
+    Verifies that the received HMAC matches the calculated HMAC.
+    """
+    calculated_mac = generate_hmac(key, message)
+    return hmac.compare_digest(calculated_mac, received_mac)
+
+# 1. Setup shared secret and message
+secret_key = "university-ala-secret-key"
+transmission = "Request: Transfer $500.00 to account 12345"
+
+# 2. Sender side: Generate the MAC
+mac = generate_hmac(secret_key, transmission)
+print(f"Message: {transmission}")
+print(f"Generated HMAC: {mac}")
+
+# 3. Receiver side: Verification
+print("-" * 64)
+# Success case (No tampering)
+is_authentic = verify_hmac(secret_key, transmission, mac)
+print(f"Verification (Original): {'✅ SUCCESS' if is_authentic else '❌ FAILED'}")
+
+# Tamper case (Changing one character)
+tampered_message = transmission + "!"
+is_authentic_tamper = verify_hmac(secret_key, tampered_message, mac)
+print(f"Verification (Tampered): {'✅ SUCCESS' if is_authentic_tamper else '❌ FAILED'}")
+`;
+
+function openCodeModal() {
+    const modal = document.getElementById('code-modal');
+    const codeElement = document.getElementById('python-code');
+    codeElement.textContent = pythonCodeALA3;
+    modal.style.display = 'block';
+    
+    // Trigger Prism highlighting
+    if (window.Prism) {
+        Prism.highlightElement(codeElement);
     }
 }
 
-// Capture and download the terminal node as an image
-function downloadOutput() {
-    const terminal = document.getElementById('terminal-wrapper');
-
-    // Temporarily fix styles for capturing
-    const prevOv = terminal.style.overflowY;
-    const prevHeight = terminal.style.height;
-    terminal.style.overflowY = 'visible';
-    terminal.style.height = terminal.scrollHeight + 'px';
-
-    setTimeout(() => {
-        html2canvas(terminal, {
-            backgroundColor: "#1e1e1e",
-            scale: 2 // High Resolution capture
-        }).then(canvas => {
-            terminal.style.overflowY = prevOv; // Restore
-            terminal.style.height = prevHeight; // Restore
-            let link = document.createElement('a');
-            link.download = 'hmac_execution_output.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-    }, 150);
+function closeCodeModal() {
+    document.getElementById('code-modal').style.display = 'none';
 }
 
-// Trigger initial run on load
-window.addEventListener('DOMContentLoaded', runPythonCode);
+function copyCode() {
+    navigator.clipboard.writeText(pythonCodeALA3).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = "CODE COPIED TO CLIPBOARD!";
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2000);
+    });
+}
+
+function downloadCode() {
+    const blob = new Blob([pythonCodeALA3], { type: 'text/x-python' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ala3_hmac_auth.py';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('code-modal');
+    if (event.target == modal) {
+        closeCodeModal();
+    }
+}
+
+/**
+ * Copy Utility for UI MACs
+ */
+function copyToClipboard(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = "COPIED TO CLIPBOARD!";
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2000);
+    });
+}
