@@ -1,136 +1,268 @@
-function is_prime(n) {
-    if (n < 2n) return false;
-    for (let i = 2n; i * i <= n; i++) {
-        if (n % i === 0n) return false;
-    }
-    return true;
-}
+document.addEventListener('DOMContentLoaded', () => {
+    // Elements
+    const genKeysBtn = document.getElementById('gen-keys-btn');
+    const genText = document.getElementById('gen-text');
+    const genLoader = document.getElementById('gen-loader');
+    
+    const pubKeyDisplay = document.getElementById('pub-key-display');
+    const privKeyDisplay = document.getElementById('priv-key-display');
+    
+    const messageInput = document.getElementById('message-input');
+    const signBtn = document.getElementById('sign-btn');
+    const signatureDisplay = document.getElementById('signature-display');
+    
+    const verifyBtn = document.getElementById('verify-btn');
+    const tamperBtn = document.getElementById('tamper-btn');
+    const verifyResult = document.getElementById('verify-result');
 
-function generate_prime() {
-    while (true) {
-        let num = BigInt(Math.floor(Math.random() * 200) + 100);
-        if (is_prime(num)) return num;
-    }
-}
+    // State
+    let currentKeyPair = null;
+    let currentSignature = null;
+    let encodedMessage = null;
 
-function gcd(a, b) {
-    while (b !== 0n) {
-        let temp = b;
-        b = a % b;
-        a = temp;
-    }
-    return a;
-}
-
-function mod_inverse(e, phi) {
-    for (let d = 1n; d < phi; d++) {
-        if ((d * e) % phi === 1n) return d;
-    }
-    return null;
-}
-
-function modPow(base, exponent, modulus) {
-    if (modulus === 1n) return 0n;
-    let result = 1n;
-    base = base % modulus;
-    while (exponent > 0n) {
-        if (exponent % 2n === 1n) result = (result * base) % modulus;
-        exponent = exponent >> 1n;
-        base = (base * base) % modulus;
-    }
-    return result;
-}
-
-async function hash_message(message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return BigInt('0x' + hashHex);
-}
-
-async function runPythonCode() {
-    const msg = document.getElementById("msg-input").value || "Test Message";
-    const output = document.getElementById("output");
-    output.style.color = "#00ff00"; // Reset terminal color
-
-    try {
-        let p = generate_prime();
-        let q = generate_prime();
-        while (q === p) q = generate_prime();
-        let n = p * q;
-        let phi = (p - 1n) * (q - 1n);
-
-        let e = 2n;
-        let randMax = Number(phi - 1n);
-        while (true) {
-            e = BigInt(Math.floor(Math.random() * (randMax - 2)) + 2);
-            if (gcd(e, phi) === 1n) break;
+    /**
+     * Convert ArrayBuffer to Base64 String
+     */
+    function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
         }
-        let d = mod_inverse(e, phi);
+        return window.btoa(binary);
+    }
 
-        let text = `[INITIALIZING CRYPTO ENGINE...]\n`;
-        text += `--------------------------------------\n`;
-        text += `Student Name: PARTH SOLANKI\n`;
-        text += `Enrollment  : 20230905090038\n`;
-        text += `Activity    : ALA-1 (Digital Signature)\n`;
-        text += `--------------------------------------\n\n`;
-        
-        text += `🔑 Generating Key Pair...\n`;
-        text += `   Public Key  : (${e}, ${n})\n`;
-        text += `   Private Key : (${d}, ${n})\n\n`;
-        
-        text += `📝 Input Message : "${msg}"\n`;
-        
-        let hashed = await hash_message(msg);
-        text += `🔢 SHA-256 Hash : ${hashed.toString(16).substring(0, 32)}...\n\n`;
-        
-        let signature = modPow(hashed, d, n);
-        text += `✍️ Generated Digital Signature:\n   ${signature}\n\n`;
+    /**
+     * Generate RSA Key Pair
+     */
+    async function generateKeys() {
+        genText.style.display = 'none';
+        genLoader.style.display = 'flex';
+        genKeysBtn.disabled = true;
 
-        let verify_hashed = await hash_message(msg);
-        let decrypted = modPow(signature, e, n);
+        try {
+            const keyPair = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-PSS",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([1, 0, 1]),
+                    hash: "SHA-256",
+                },
+                true,
+                ["sign", "verify"]
+            );
 
-        text += `🔍 Verifying Signature...\n`;
-        if ((verify_hashed % n) === decrypted) {
-            text += `✅ VERIFICATION SUCCESSFUL\n`;
-            text += `   Message Integrity: GUARANTEED\n`;
-        } else {
-            text += `❌ VERIFICATION FAILED\n`;
-            text += `   Message Integrity: COMPROMISED\n`;
+            currentKeyPair = keyPair;
+
+            // Export for display
+            const exportedPub = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
+            const exportedPriv = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+
+            pubKeyDisplay.textContent = arrayBufferToBase64(exportedPub).substring(0, 120) + '...';
+            privKeyDisplay.textContent = 'MIIEvAIBADANBgkqhkiG9w0BAQEFAASC...[HIDDEN]';
+
+            // Enable next steps
+            signBtn.disabled = false;
+        } catch (err) {
+            console.error("Key Gen Error:", err);
+            alert("Failed to generate keys.");
+        } finally {
+            genText.style.display = 'inline';
+            genLoader.style.display = 'none';
+            genKeysBtn.disabled = false;
+        }
+    }
+
+    /**
+     * Sign Message
+     */
+    async function signMessage() {
+        const message = messageInput.value;
+        if (!message) {
+            alert("Please enter a message!");
+            return;
         }
 
-        output.innerText = text;
-    } catch (err) {
-        output.innerText = "Error encountered:\n" + err;
-        output.style.color = "red";
+        try {
+            const encoder = new TextEncoder();
+            encodedMessage = encoder.encode(message);
+
+            const signature = await window.crypto.subtle.sign(
+                {
+                    name: "RSA-PSS",
+                    saltLength: 32,
+                },
+                currentKeyPair.privateKey,
+                encodedMessage
+            );
+
+            currentSignature = signature;
+            signatureDisplay.textContent = arrayBufferToBase64(signature);
+
+            // Enable verify
+            verifyBtn.disabled = false;
+            tamperBtn.disabled = false;
+            verifyResult.style.display = 'none';
+        } catch (err) {
+            console.error("Signing Error:", err);
+            alert("Failed to sign message.");
+        }
+    }
+
+    /**
+     * Verify Signature
+     */
+    async function verifySignature() {
+        if (!currentSignature || !encodedMessage) return;
+
+        try {
+            // Re-encode message in case user edited it
+            const encoder = new TextEncoder();
+            const messageToVerify = encoder.encode(messageInput.value);
+
+            const isValid = await window.crypto.subtle.verify(
+                {
+                    name: "RSA-PSS",
+                    saltLength: 32,
+                },
+                currentKeyPair.publicKey,
+                currentSignature,
+                messageToVerify
+            );
+
+            verifyResult.style.display = 'block';
+            if (isValid) {
+                verifyResult.textContent = "✅ VALID SIGNATURE";
+                verifyResult.className = "result-status status-valid";
+            } else {
+                verifyResult.textContent = "❌ INVALID SIGNATURE / TAMPERED";
+                verifyResult.className = "result-status status-invalid";
+            }
+        } catch (err) {
+            console.error("Verification Error:", err);
+            verifyResult.textContent = "❌ VERIFICATION FAILED";
+            verifyResult.className = "result-status status-invalid";
+            verifyResult.style.display = 'block';
+        }
+    }
+
+    /**
+     * Tamper Message
+     */
+    function tamperMessage() {
+        const msg = messageInput.value;
+        if (msg.length > 0) {
+            // Change one character or add something
+            messageInput.value = msg + " [ALtered]";
+            verifyResult.style.display = 'none';
+        }
+    }
+
+    // Event Listeners
+    genKeysBtn.addEventListener('click', generateKeys);
+    signBtn.addEventListener('click', signMessage);
+    verifyBtn.addEventListener('click', verifySignature);
+    tamperBtn.addEventListener('click', tamperMessage);
+
+    // Initialize with a key pair
+    generateKeys();
+});
+
+// --- CODE VIEW MODAL LOGIC ---
+const pythonCodeALA1 = `from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, padding
+
+# 1. Generate Key Pair
+private_key = rsa.generate_private_key(
+    public_exponent=65537,
+    key_size=2048
+)
+public_key = private_key.public_key()
+
+# 2. Message to Sign
+message = b"Hello, this is a secure transmission."
+
+# 3. Sign the Message (Private Key)
+signature = private_key.sign(
+    message,
+    padding.PSS(
+        mgf=padding.MGF1(hashes.SHA256()),
+        salt_length=padding.PSS.MAX_LENGTH
+    ),
+    hashes.SHA256()
+)
+
+# 4. Verify the Signature (Public Key)
+try:
+    public_key.verify(
+        signature,
+        message,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH
+        ),
+        hashes.SHA256()
+    )
+    print("Verification Result: Valid Signature")
+except Exception as e:
+    print(f"Verification Result: Invalid Signature ({e})")
+`;
+
+function openCodeModal() {
+    const modal = document.getElementById('code-modal');
+    const codeElement = document.getElementById('python-code');
+    codeElement.textContent = pythonCodeALA1;
+    modal.style.display = 'block';
+    
+    // Trigger Prism highlighting
+    if (window.Prism) {
+        Prism.highlightElement(codeElement);
     }
 }
 
-// Capture and download the terminal node as an image
-function downloadOutput() {
-    const terminal = document.getElementById('terminal-wrapper');
-
-    // Temporarily fix styles for capturing
-    const prevOv = terminal.style.overflowY;
-    const prevHeight = terminal.style.height;
-    terminal.style.overflowY = 'visible';
-    terminal.style.height = terminal.scrollHeight + 'px';
-
-    setTimeout(() => {
-        html2canvas(terminal, {
-            backgroundColor: "#1e1e1e",
-            scale: 2 // High Resolution capture
-        }).then(canvas => {
-            terminal.style.overflowY = prevOv; // Restore
-            terminal.style.height = prevHeight; // Restore
-            let link = document.createElement('a');
-            link.download = 'rsa_execution_output.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-    }, 150);
+function closeCodeModal() {
+    document.getElementById('code-modal').style.display = 'none';
 }
 
-// Trigger initial run on load
-window.addEventListener('DOMContentLoaded', runPythonCode);
+function copyCode() {
+    navigator.clipboard.writeText(pythonCodeALA1).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = "CODE COPIED TO CLIPBOARD!";
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2000);
+    });
+}
+
+function downloadCode() {
+    const blob = new Blob([pythonCodeALA1], { type: 'text/x-python' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ala1_digital_signature.py';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('code-modal');
+    if (event.target == modal) {
+        closeCodeModal();
+    }
+}
+
+/**
+ * Copy Utility for UI Keys
+ */
+function copyToClipboard(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = "COPIED TO CLIPBOARD!";
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2000);
+    });
+}
