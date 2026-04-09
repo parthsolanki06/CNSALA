@@ -1,86 +1,200 @@
-async function getHashHex(algo, text) {
-    const msgBuffer = new TextEncoder().encode(text);
-    const hashBuffer = await crypto.subtle.digest(algo, msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
+document.addEventListener('DOMContentLoaded', () => {
+    // Inputs
+    const msgOrig = document.getElementById('msg-orig');
+    const msgMod = document.getElementById('msg-mod');
+    const compareBtn = document.getElementById('compare-btn');
 
-async function get_hashes(text) {
-    const sha1 = await getHashHex('SHA-1', text);
-    const sha256 = await getHashHex('SHA-256', text);
-    const sha512 = await getHashHex('SHA-512', text);
-    return [sha1, sha256, sha512];
-}
+    // Outputs - Original
+    const origSha1 = document.getElementById('orig-sha1');
+    const origSha256 = document.getElementById('orig-sha256');
+    const origSha512 = document.getElementById('orig-sha512');
 
-function compare_hashes(h1, h2) {
-    let diff = 0;
-    for (let i = 0; i < h1.length; i++) {
-        if (h1[i] !== h2[i]) diff++;
+    // Outputs - Modified
+    const modSha1 = document.getElementById('mod-sha1');
+    const modSha256 = document.getElementById('mod-sha256');
+    const modSha512 = document.getElementById('mod-sha512');
+
+    // Stats
+    const statsSection = document.getElementById('stats-section');
+    const avalanchePercent = document.getElementById('avalanche-percent');
+    const statMsg = document.getElementById('stat-msg');
+
+    /**
+     * Compare two strings and highlight differences in red
+     */
+    function highlightDiff(strMod, strOrig) {
+        if (!strOrig || !strMod) return strMod;
+        
+        let result = '';
+        const len = Math.max(strMod.length, strOrig.length);
+        let diffCount = 0;
+
+        for (let i = 0; i < len; i++) {
+            const charMod = strMod[i] || '';
+            const charOrig = strOrig[i] || '';
+
+            if (charMod !== charOrig) {
+                result += `<span class="diff-char">${charMod}</span>`;
+                diffCount++;
+            } else {
+                result += charMod;
+            }
+        }
+        return { html: result, count: diffCount, total: len };
     }
-    return diff;
-}
 
-async function runPythonCode() {
-    const msg1 = document.getElementById("msg-input1").value || "Hello";
-    const msg2 = document.getElementById("msg-input2").value || "Hello!";
-    const output = document.getElementById("output");
-    output.style.color = "#00ff00";
+    /**
+     * Main Comparison Logic
+     */
+    function runComparison() {
+        const textOrig = msgOrig.value;
+        const textMod = msgMod.value;
 
-    try {
-        const [sha1_1, sha256_1, sha512_1] = await get_hashes(msg1);
-        const [sha1_2, sha256_2, sha512_2] = await get_hashes(msg2);
+        // 1. Generate Hashes for Original
+        const h1Orig = CryptoJS.SHA1(textOrig).toString();
+        const h256Orig = CryptoJS.SHA256(textOrig).toString();
+        const h512Orig = CryptoJS.SHA512(textOrig).toString();
 
-        let text = `===== SHA Integrity Analyzer =====\n`;
-        text += `Enter original text: ${msg1}\n`;
-        text += `Enter modified text (slight change): ${msg2}\n`;
+        // 2. Generate Hashes for Modified
+        const h1Mod = CryptoJS.SHA1(textMod).toString();
+        const h256Mod = CryptoJS.SHA256(textMod).toString();
+        const h512Mod = CryptoJS.SHA512(textMod).toString();
 
-        text += `\n--- Avalanche Effect Demonstration ---\n`;
+        // 3. Display Original
+        origSha1.textContent = h1Orig || '...';
+        origSha256.textContent = h256Orig || '...';
+        origSha512.textContent = h512Orig || '...';
 
-        text += `\nOriginal Input:\n`;
-        text += `\nInput Text: ${msg1}\n`;
-        text += `SHA-1   : ${sha1_1}\n`;
-        text += `SHA-256 : ${sha256_1}\n`;
-        text += `SHA-512 : ${sha512_1}\n`;
+        // 4. Analysis & Comparison
+        const res1 = highlightDiff(h1Mod, h1Orig);
+        const res256 = highlightDiff(h256Mod, h256Orig);
+        const res512 = highlightDiff(h512Mod, h512Orig);
 
-        text += `\nModified Input (small change):\n`;
-        text += `\nInput Text: ${msg2}\n`;
-        text += `SHA-1   : ${sha1_2}\n`;
-        text += `SHA-256 : ${sha256_2}\n`;
-        text += `SHA-512 : ${sha512_2}\n`;
+        // 5. Display Modified with Highlights
+        modSha1.innerHTML = res1.html;
+        modSha256.innerHTML = res256.html;
+        modSha512.innerHTML = res512.html;
 
-        text += `\nObservation:\n`;
-        text += `Even a small change in input produces completely different hash outputs.\n`;
+        // 6. Calculate Avalanche Percentage (using SHA-256 for standard)
+        if (textOrig && textMod) {
+            const percentage = ((res256.count / res256.total) * 100).toFixed(1);
+            avalanchePercent.textContent = `${percentage}%`;
+            statsSection.style.display = 'block';
 
-        output.innerText = text;
-    } catch (err) {
-        output.innerText = "Error encountered:\n" + err;
-        output.style.color = "red";
+            if (percentage > 50) {
+                statMsg.textContent = "CRITICAL: Small change → Huge hash difference detected!";
+                statMsg.style.color = 'var(--neon-yellow)';
+            } else if (percentage > 0) {
+                statMsg.textContent = "Significant hash divergence observed.";
+                statMsg.style.color = 'var(--neon-cyan)';
+            } else {
+                statMsg.textContent = "Integrity maintained. No changes detected.";
+                statMsg.style.color = 'var(--neon-green)';
+            }
+        } else {
+            statsSection.style.display = 'none';
+        }
+    }
+
+    // Trigger on button click
+    compareBtn.addEventListener('click', runComparison);
+
+    // Also trigger in real-time for better interaction
+    const inputs = [msgOrig, msgMod];
+    inputs.forEach(input => {
+        input.addEventListener('input', runComparison);
+    });
+});
+
+// --- CODE VIEW MODAL LOGIC ---
+const pythonCodeALA2 = `import hashlib
+
+def calculate_sha256(message):
+    """
+    Calculates the SHA-256 hash of a string.
+    """
+    return hashlib.sha256(message.encode()).hexdigest()
+
+# Demonstration of the Avalanche Effect
+input1 = "Cybersecurity Lab"
+input2 = "cybersecurity Lab"  # Only the first letter changed (C -> c)
+
+hash1 = calculate_sha256(input1)
+hash2 = calculate_sha256(input2)
+
+print(f"Input 1: {input1}")
+print(f"Hash 1:  {hash1}")
+print("-" * 64)
+print(f"Input 2: {input2}")
+print(f"Hash 2:  {hash2}")
+
+# Calculate character mismatch count (Avalanche visualization)
+diff = sum(1 for a, b in zip(hash1, hash2) if a != b)
+total = len(hash1)
+percentage = (diff / total) * 100
+
+print("-" * 64)
+print(f"Total Characters Changed: {diff}/{total} ({percentage:.2f}%)")
+print("\\nConclusion: Even a 1-bit difference in input results in ")
+print("a completely different hash string.")
+`;
+
+function openCodeModal() {
+    const modal = document.getElementById('code-modal');
+    const codeElement = document.getElementById('python-code');
+    codeElement.textContent = pythonCodeALA2;
+    modal.style.display = 'block';
+    
+    // Trigger Prism highlighting
+    if (window.Prism) {
+        Prism.highlightElement(codeElement);
     }
 }
 
-// Capture and download the terminal node as an image
-function downloadOutput() {
-    const terminal = document.getElementById('terminal-wrapper');
-
-    const prevOv = terminal.style.overflowY;
-    const prevHeight = terminal.style.height;
-    terminal.style.overflowY = 'visible';
-    terminal.style.height = terminal.scrollHeight + 'px';
-
-    setTimeout(() => {
-        html2canvas(terminal, {
-            backgroundColor: "#1e1e1e",
-            scale: 2
-        }).then(canvas => {
-            terminal.style.overflowY = prevOv;
-            terminal.style.height = prevHeight;
-            let link = document.createElement('a');
-            link.download = 'sha_execution_output.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-    }, 150);
+function closeCodeModal() {
+    document.getElementById('code-modal').style.display = 'none';
 }
 
-// Trigger initial run on load
-window.addEventListener('DOMContentLoaded', runPythonCode);
+function copyCode() {
+    navigator.clipboard.writeText(pythonCodeALA2).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = "CODE COPIED TO CLIPBOARD!";
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 2000);
+    });
+}
+
+function downloadCode() {
+    const blob = new Blob([pythonCodeALA2], { type: 'text/x-python' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ala2_sha_avalanche.py';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('code-modal');
+    if (event.target == modal) {
+        closeCodeModal();
+    }
+}
+
+/**
+ * Global Copy Function for UI Hashes
+ */
+function copyText(elementId) {
+    const text = document.getElementById(elementId).innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.textContent = "COPIED TO CLIPBOARD!";
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 2000);
+    });
+}
