@@ -1,307 +1,386 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>GMIU Student Portal - Parth Solanki</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #4f46e5;
-      --secondary: #ec4899;
-      --bg-light: #f8fafc;
-      --surface: rgba(255, 255, 255, 0.9);
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border: rgba(255, 255, 255, 0.7);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University ALA Portal | GMIU</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    /* Core Single-Screen Layout */
-    html, body {
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden; /* Strict no scrolling */
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 50%, #d1d5db 100%);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0, transparent 50%);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            color: var(--text-main);
+            overflow: hidden; /* Default: no scrolling */
+        }
 
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: #f1f5f9;
-      background-image: 
-        radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.05) 0%, transparent 40%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 2vh;
-    }
+        @media (max-width: 650px) {
+            body {
+                display: block; /* Stack naturally on mobile */
+                height: auto;
+                min-height: 100vh;
+                padding: 1rem 0;
+                overflow: auto; /* Allow scrolling on mobile */
+            }
+        }
 
-    .container {
-      width: 95%;
-      max-width: 950px;
-      height: auto;
-      max-height: 95vh;
-      background: var(--surface);
-      backdrop-filter: blur(30px);
-      -webkit-backdrop-filter: blur(30px);
-      border-radius: 40px;
-      border: 1px solid var(--border);
-      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.06);
-      padding: clamp(2rem, 5vh, 4rem);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-evenly;
-      gap: 2vh;
-      animation: slideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-    }
+        .dashboard {
+            width: 95%;
+            max-width: 850px;
+            height: 90vh; /* Fixed height for dashboard */
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Spread items evenly */
+            animation: fadeIn 0.8s ease-out;
+            overflow: hidden; /* Strict no scrolling */
+        }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    /* Header Styling */
-    .header {
-      width: 100%;
-      text-align: center;
-    }
+        /* Header Styling */
+        header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
 
-    .logo-wrapper {
-      background: white;
-      display: inline-flex;
-      padding: 0.8vh 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 1.5vh;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
-    }
+        .logo-box {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 15px;
+            display: inline-flex;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
 
-    .logo {
-      height: clamp(30px, 4.5vh, 45px);
-    }
+        .logo {
+            height: 50px;
+            object-fit: contain;
+        }
 
-    h1 {
-      font-size: clamp(1.6rem, 4vh, 2.4rem);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      color: var(--text-main);
-      margin-bottom: 0.5vh;
-    }
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
 
-    .badge {
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      padding: 0.8vh 1.5rem;
-      border-radius: 999px;
-      font-size: clamp(0.75rem, 1.6vh, 0.95rem);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      box-shadow: 0 10px 20px rgba(236, 72, 153, 0.2);
-    }
+        .badge-ala {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-block;
+        }
 
-    /* Info Grid Styling */
-    .info-grid {
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5vh 1.5rem;
-    }
+        /* Student Info Section */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
 
-    .info-card {
-      background: white;
-      padding: clamp(1rem, 2vh, 1.5rem);
-      border-radius: 20px;
-      border: 1px solid rgba(0, 0, 0, 0.03);
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      text-align: left;
-      transition: all 0.3s ease;
-    }
+        .info-card {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            transition: var(--transition);
+        }
 
-    .info-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.02);
-    }
+        .info-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
 
-    .icon-box {
-      width: clamp(36px, 4.5vh, 48px);
-      height: clamp(36px, 4.5vh, 48px);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1.2vh;
-    }
+        .icon-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--primary);
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05), inset -2px -2px 5px rgba(255,255,255,0.7);
+        }
 
-    .icon-box svg {
-      width: 50%;
-      height: 50%;
-    }
+        .info-text {
+            display: flex;
+            flex-direction: column;
+        }
 
-    .info-label {
-      font-size: clamp(0.65rem, 1.2vh, 0.75rem);
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 600;
-      margin-bottom: 0.4vh;
-    }
+        .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
 
-    .info-value {
-      font-size: clamp(1rem, 2vh, 1.3rem);
-      font-weight: 700;
-      color: var(--text-main);
-    }
+        .value {
+            font-weight: 600;
+            font-size: 1.15rem;
+        }
 
-    /* Buttons Row */
-    .action-buttons {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-    }
+        /* ALA Actions Section */
+        .ala-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
 
-    .btn {
-      flex: 1;
-      padding: clamp(0.8rem, 2vh, 1.25rem);
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: clamp(0.9rem, 2vh, 1.1rem);
-      text-decoration: none;
-      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-      background: #ffffff;
-      color: var(--text-main);
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
-      position: relative;
-      overflow: hidden;
-      z-index: 1;
-    }
+        .ala-card {
+            text-decoration: none;
+            color: inherit;
+            background: white;
+            padding: 1.5rem 1rem;
+            border-radius: 20px;
+            text-align: center;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: #000000;
-      transform: translateY(100%);
-      transition: transform 0.4s ease;
-      z-index: -1;
-    }
+        .ala-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 25px;
+            padding: 2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.1;
+            transition: var(--transition);
+        }
 
-    .btn:hover {
-      color: #ffffff;
-      transform: translateY(-5px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      border-color: transparent;
-    }
+        .ala-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+        }
 
-    .btn:hover::before {
-      transform: translateY(0);
-    }
+        .ala-card:hover::before {
+            opacity: 1;
+        }
 
-    .footer {
-      width: 100%;
-      padding-top: 1vh;
-      border-top: 1px solid rgba(0, 0, 0, 0.05);
-      font-size: clamp(0.7rem, 1.3vh, 0.85rem);
-      color: var(--text-muted);
-      font-weight: 500;
-      text-align: center;
-    }
+        .ala-icon {
+            width: 60px;
+            height: 60px;
+            background: #f8fafc;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            transition: var(--transition);
+        }
 
-    /* Scaling for smaller screens without scroll */
-    @media (max-width: 600px) {
-      .info-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1vh 0.75rem;
-      }
-      .action-buttons {
-        gap: 0.5rem;
-      }
-      .btn {
-        padding: 0.8rem 0.2rem;
-        font-size: 0.75rem;
-      }
-      .container {
-        padding: 1.5rem;
-      }
-    }
-  </style>
+        .ala-card:hover .ala-icon {
+            background: var(--primary);
+            color: white;
+            transform: rotate(5deg);
+        }
+
+        .ala-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            padding-top: 1rem;
+        }
+
+        footer strong {
+            color: var(--text-main);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 850px) {
+            .ala-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 650px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .dashboard {
+                padding: 2rem 1.5rem;
+                height: auto;
+                max-height: none;
+                overflow: visible;
+                margin: 1rem 0;
+            }
+            h1 {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
-  <div class="container">
-    <header class="header">
-      <div class="logo-wrapper">
-        <img src="gmiu.png" alt="University Logo" class="logo">
-      </div>
-      <h1>Gyanmanjari Innovative University</h1>
-      <div><span class="badge">Active Learning Activities</span></div>
-    </header>
+    <div class="dashboard">
+        <header>
+            <div class="logo-box">
+                <img src="gmiu.png" alt="University Logo" class="logo">
+            </div>
+            <h1>Gyanmanjari Innovative University</h1>
+            <span class="badge-ala">Active Learning Activities</span>
+        </header>
 
-    <div class="info-grid">
-      <!-- Student Name -->
-      <div class="info-card">
-        <div class="icon-box" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <div class="info-label">Student Name</div>
-        <div class="info-value">SOLANKI PARTH DINESHBHAI</div>
-      </div>
+        <section class="info-grid">
+            <!-- Name -->
+            <div class="info-card">
+                <div class="icon-circle">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="info-text">
+                    <span class="label">Student Name</span>
+                    <span class="value">Solanki Parth</span>
+                </div>
+            </div>
 
-      <!-- Enrollment -->
-      <div class="info-card">
-        <div class="icon-box" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-          </svg>
-        </div>
-        <div class="info-label">Enrollment Number</div>
-        <div class="info-value">20230905090038</div>
-      </div>
+            <!-- Enrollment -->
+            <div class="info-card">
+                <div class="icon-circle">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div class="info-text">
+                    <span class="label">Enrollment No</span>
+                    <span class="value">20230905090038</span>
+                </div>
+            </div>
 
-      <!-- Subject -->
-      <div class="info-card">
-        <div class="icon-box" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-        </div>
-        <div class="info-label">Subject Name</div>
-        <div class="info-value" style="font-size: clamp(0.7rem, 1.4vh, 0.95rem);">CRYPTOGRAPHY AND NETWORK SECURITY</div>
-      </div>
+            <!-- Subject -->
+            <div class="info-card">
+                <div class="icon-circle">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <div class="info-text">
+                    <span class="label">Subject</span>
+                    <span class="value" style="font-size: 1rem;">Cryptography & Security</span>
+                </div>
+            </div>
 
-      <!-- Course Code -->
-      <div class="info-card">
-        <div class="icon-box" style="color: #ec4899; background: rgba(236, 72, 153, 0.1);">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-          </svg>
-        </div>
-        <div class="info-label">Subject Code</div>
-        <div class="info-value">BETIT16326</div>
-      </div>
+            <!-- Code -->
+            <div class="info-card">
+                <div class="icon-circle">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="info-text">
+                    <span class="label">Subject Code</span>
+                    <span class="value">BETIT16326</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="ala-grid">
+            <a href="ala1.html" class="ala-card" id="ala1-card">
+                <div class="ala-icon"><i class="fas fa-file-signature"></i></div>
+                <span class="ala-name">ALA-1</span>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Digital Signatures</p>
+            </a>
+
+            <a href="ala2.html" class="ala-card" id="ala2-card">
+                <div class="ala-icon"><i class="fas fa-shield-virus"></i></div>
+                <span class="ala-name">ALA-2</span>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">Integrity Analyzer</p>
+            </a>
+
+            <a href="ala3.html" class="ala-card" id="ala3-card">
+                <div class="ala-icon"><i class="fas fa-lock"></i></div>
+                <span class="ala-name">ALA-3</span>
+                <p style="font-size: 0.75rem; color: var(--text-muted);">HMAC Authentication</p>
+            </a>
+        </section>
+
+        <footer>
+            Designed by <strong>Parth Solanki</strong>
+        </footer>
     </div>
 
-    <div class="action-buttons">
-      <a href="ala1.html" class="btn">ALA-1</a>
-      <a href="ala2.html" class="btn">ALA-2</a>
-      <a href="ala3.html" class="btn">ALA-3</a>
-    </div>
-
-    <div class="footer">
-      Designed by <strong>Parth Solanki</strong>
-    </div>
-  </div>
-
+    <script>
+        // Subtle interaction: Card entrance stagger
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.info-card, .ala-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    card.style.transition = '0.5s cubic-bezier(0.22, 1, 0.36, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 100 * index);
+            });
+        });
+    </script>
 </body>
 </html>
